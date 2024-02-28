@@ -15,7 +15,10 @@ PORT = 2095
 DOMAIN = "dingo.pinkplayhouse.xyz"
 
 PDF_STORAGE_DIR = 'pdf_storage'
-WEBPAGE_LOAD_SECONDS = 3
+# driver.get() webpage access timeout
+WEBPAGE_TIMEOUT_SECONDS = 5
+# After the webpage has been accessed, duration to wait for webpage to load before taking a screenshot
+WEBPAGE_LOAD_SECONDS = 5
 """
 End of Options
 """
@@ -42,7 +45,11 @@ class PDFConverter:
     def convert_webpage_to_pdf(self, url):
         try:
             driver = self.setup_undetected_chrome_driver()
+            driver.set_page_load_timeout(WEBPAGE_TIMEOUT_SECONDS)
             driver.get(url)
+            logging.info(f"Accessed webpage '{url}' successfully. "
+                         f"Waiting {WEBPAGE_LOAD_SECONDS} seconds for it to "
+                         f"load before creating PDF...")
             time.sleep(WEBPAGE_LOAD_SECONDS)
 
             result = driver.execute_cdp_cmd("Page.printToPDF", {"landscape": False, "printBackground": True})
