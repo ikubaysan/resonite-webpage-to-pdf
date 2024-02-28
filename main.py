@@ -1,24 +1,38 @@
-import pdfkit
-import requests
+import time
+import undetected_chromedriver as uc
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import base64
 
 
-def url_to_pdf(url, output_filename):
-    try:
-        # Fetch the content of the URL
-        response = requests.get(url)
-        response.raise_for_status()  # Raises an HTTPError if the HTTP request returned an unsuccessful status code
+def setup_undetected_chrome_driver():
+    options = uc.ChromeOptions()
+    options.add_argument('--headless')
+    # Add any other options you need
+    driver = uc.Chrome(options=options)
+    return driver
 
-        # Use pdfkit to convert HTML to PDF
-        pdfkit.from_string(response.text, output_filename)
 
-        print(f"PDF successfully created: {output_filename}")
-    except requests.exceptions.RequestException as e:
-        print(f"Request failed: {e}")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+def convert_webpage_to_pdf(url, output_filename):
+    driver = setup_undetected_chrome_driver()
+    driver.get(url)
+
+    # Use explicit waits or time.sleep as necessary
+    # Example of an explicit wait:
+    # WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+
+    # Execute Chrome's print to PDF command
+    result = driver.execute_cdp_cmd("Page.printToPDF", {"landscape": False, "printBackground": True})
+
+    # Decode the base64-encoded result and save to file
+    with open(output_filename, "wb") as f:
+        f.write(base64.b64decode(result['data']))
+
+    driver.quit()
 
 
 # Example usage
-url = "http://google.com"
+url = "http://yahoo.com"
 output_filename = "output.pdf"
-url_to_pdf(url, output_filename)
+convert_webpage_to_pdf(url, output_filename)
