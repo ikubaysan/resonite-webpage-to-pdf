@@ -6,3 +6,4 @@ lxml
 undetected-chromedriver
 selenium
 webdriver-manager
+flask
