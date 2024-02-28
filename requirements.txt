@@ -1,7 +1,3 @@
-pdfkit
-requests
-weasyprint
-beautifulsoup4
 lxml
 undetected-chromedriver
 selenium
