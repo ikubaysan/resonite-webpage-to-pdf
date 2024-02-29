@@ -19,6 +19,7 @@ PDF_STORAGE_DIR = 'pdf_storage'
 WEBPAGE_TIMEOUT_SECONDS = 5
 # After the webpage has been accessed, duration to wait for webpage to load before taking a screenshot
 WEBPAGE_LOAD_SECONDS = 5
+DUPLICATE_PDF_PRUNE_SECONDS = 60 * 60 * 24 * 7 # 7 days
 """
 End of Options
 """
@@ -61,8 +62,11 @@ class PDFConverter:
             # check if any pdf file exists in storage_dir which starts with the "<encoded_url>_"
             # if yes, then delete that file
             for file in os.listdir(self.storage_dir):
-                if file.startswith(f"{encoded_url}_"):
-                    os.remove(os.path.join(self.storage_dir, file))
+                if file.startswith(f"{encoded_url}_") and file.endswith(".pdf"):
+                    # check if the file is older than DUPLICATE_PDF_PRUNE_SECONDS, based on os.path.getmtime
+                    if time.time() - os.path.getmtime(os.path.join(self.storage_dir, file)) > DUPLICATE_PDF_PRUNE_SECONDS:
+                        logging.info(f"Pruning old PDF file: {file}")
+                        os.remove(os.path.join(self.storage_dir, file))
 
             safe_filename = f"{encoded_url}_{int(time.time())}.pdf"
             output_filename = os.path.join(self.storage_dir, safe_filename)
