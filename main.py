@@ -76,6 +76,10 @@ def convert():
     if not url:
         return Response("Missing URL", status=400, mimetype='text/plain')
 
+    # Check if the URL has a scheme, if not, prepend 'http://'
+    if not (url.startswith('http://') or url.startswith('https://')):
+        url = 'http://' + url
+
     logging.info(f"Received request to convert URL: {url}")
 
     converter = PDFConverter()
