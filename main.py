@@ -57,7 +57,14 @@ class PDFConverter:
 
             # Encode URL to a filesystem-safe Base64 string
             encoded_url = base64.urlsafe_b64encode(url.encode('utf-8')).decode('utf-8')
-            safe_filename = f"{encoded_url}.pdf"
+
+            # check if any pdf file exists in storage_dir which starts with the "<encoded_url>_"
+            # if yes, then delete that file
+            for file in os.listdir(self.storage_dir):
+                if file.startswith(f"{encoded_url}_"):
+                    os.remove(os.path.join(self.storage_dir, file))
+
+            safe_filename = f"{encoded_url}_{int(time.time())}.pdf"
             output_filename = os.path.join(self.storage_dir, safe_filename)
 
             with open(output_filename, "wb") as f:
