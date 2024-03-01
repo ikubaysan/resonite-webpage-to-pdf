@@ -43,6 +43,18 @@ class PDFConverter:
         driver = uc.Chrome(options=options)
         return driver
 
+    @staticmethod
+    def await_webpage_load(driver, url):
+        # Wait until readyState is complete or interactive, up to WEBPAGE_LOAD_SECONDS
+        start_time = time.time()
+        while time.time() - start_time < WEBPAGE_LOAD_SECONDS:
+            ready_state = driver.execute_script("return document.readyState")
+            if ready_state in ['complete', 'interactive']:
+                logging.info(f"Confirmed webpage is ready in {round(time.time() - start_time, 4)} seconds based on readyState.")
+                return True
+            time.sleep(0.1) # Prevent CPU hogging
+        logging.warning(f"Webpage '{url}' did not reach readyState within {WEBPAGE_LOAD_SECONDS} seconds.")
+
     def convert_webpage_to_pdf(self, url):
         try:
             driver = self.setup_undetected_chrome_driver()
@@ -51,7 +63,7 @@ class PDFConverter:
             logging.info(f"Accessed webpage '{url}' successfully. "
                          f"Waiting {WEBPAGE_LOAD_SECONDS} seconds for it to "
                          f"load before creating PDF...")
-            time.sleep(WEBPAGE_LOAD_SECONDS)
+            PDFConverter.await_webpage_load(driver, url)
 
             result = driver.execute_cdp_cmd("Page.printToPDF", {"landscape": False, "printBackground": True})
             driver.quit()

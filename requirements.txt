@@ -3,3 +3,4 @@ undetected-chromedriver
 selenium
 webdriver-manager
 flask
+PyMuPDF
