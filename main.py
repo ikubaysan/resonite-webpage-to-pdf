@@ -16,9 +16,9 @@ DOMAIN = "dingo.pinkplayhouse.xyz"
 
 PDF_STORAGE_DIR = 'pdf_storage'
 # driver.get() webpage access timeout
-WEBPAGE_TIMEOUT_SECONDS = 5
+WEBPAGE_TIMEOUT_SECONDS = 10
 # After the webpage has been accessed, duration to wait for webpage to load before taking a screenshot
-WEBPAGE_LOAD_SECONDS = 5
+WEBPAGE_LOAD_SECONDS = 10
 DUPLICATE_PDF_PRUNE_SECONDS = 60 * 60 * 24 * 7 # 7 days
 """
 End of Options

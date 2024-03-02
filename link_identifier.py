@@ -25,13 +25,13 @@ class Page:
         return f"Page(number={self.number}, size={self.size}, links={self.links})"
 
 class Document:
-    def __init__(self, path: str):
-        self.path = path
+    def __init__(self, local_file_path: str, url: str):
+        self.local_file_path = local_file_path
         self.pages: List[Page] = []
         self._load_document()
 
     def _load_document(self):
-        doc = fitz.open(self.path)
+        doc = fitz.open(self.local_file_path)
         for page in doc:
             page_obj = Page(page.number, (page.rect.width, page.rect.height))
             page_links = page.get_links()
@@ -46,13 +46,17 @@ class Document:
         doc.close()
 
     def __repr__(self):
-        return f"Document(path={self.path}, pages={self.pages})"
+        return f"Document(path={self.local_file_path}, pages={self.pages})"
 
 
     def get_resonite_string(self) -> str:
         resonite_string = ""
         for page in self.pages:
             resonite_string += ">" # Indicate start of a new page
+
+            # The first two |-delimited values are the width and height of the page
+            resonite_string += f"{page.size[0]}|{page.size[1]}|"
+
             for link in page.links:
                 resonite_string += "<" # Indicate start of a link object
                 # Write link's x origin, delimited with a pipe
@@ -68,9 +72,13 @@ class Document:
 
         return resonite_string
 
-# Example usage
-pdf_path = 'asdf.pdf'
-#pdf_path = 'resowiki.pdf'
-document = Document(pdf_path)
-print(document)
-print(document.get_resonite_string())
+if __name__ == "__main__":
+    # Example usage
+    pdf_file_path = 'asdf.pdf'
+    pdf_url = "http://dingo.pinkplayhouse.xyz:2095/pdfs/aHR0cDovL2FzZGYuY29t_1709245541.pdf"
+    #pdf_path = 'resowiki.pdf'
+
+    document = Document(pdf_file_path, pdf_url)
+    print(document)
+    print()
+    print(document.get_resonite_string())
