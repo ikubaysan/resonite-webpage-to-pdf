@@ -102,6 +102,7 @@ def convert():
     # Check if the URL has a scheme, if not, prepend 'http://'
     if not (url.startswith('http://') or url.startswith('https://')):
         url = 'http://' + url
+    url = url.strip()
 
     logging.info(f"Received request to convert URL: {url}")
 
