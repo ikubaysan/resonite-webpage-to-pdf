@@ -27,6 +27,7 @@ class Page:
 class Document:
     def __init__(self, local_file_path: str, url: str):
         self.local_file_path = local_file_path
+        self.url = url
         self.pages: List[Page] = []
         self._load_document()
 
@@ -50,7 +51,22 @@ class Document:
 
 
     def get_resonite_string(self) -> str:
-        resonite_string = ""
+        """
+        :return:
+        A string of this structure, without the line breaks.
+        This is for a document with 2 pages, each containing 2 links:
+
+        URL|
+
+        >PAGE0_WIDTH|PAGE0_HEIGHT|<LINK0_X_ORIGIN|LINK0_Y_ORIGIN|LINK0_WIDTH|LINK0_HEIGHT|
+        LINK0_URI<LINK1_X_ORIGIN|LINK1_Y_ORIGIN|LINK1_WIDTH|LINK1_HEIGHT|LINK1_URI
+
+        >PAGE1_WIDTH|PAGE1_HEIGHT|<LINK0_X_ORIGIN|LINK0_Y_ORIGIN|LINK0_WIDTH|LINK0_HEIGHT|
+        LINK0_URI<LINK1_X_ORIGIN|LINK1_Y_ORIGIN|LINK1_WIDTH|LINK1_HEIGHT|LINK1_URI
+        """
+
+        resonite_string = f"{self.url}|"
+
         for page in self.pages:
             resonite_string += ">" # Indicate start of a new page
 
@@ -73,7 +89,6 @@ class Document:
         return resonite_string
 
 if __name__ == "__main__":
-    # Example usage
     pdf_file_path = 'asdf.pdf'
     pdf_url = "http://dingo.pinkplayhouse.xyz:2095/pdfs/aHR0cDovL2FzZGYuY29t_1709245541.pdf"
     #pdf_path = 'resowiki.pdf'
