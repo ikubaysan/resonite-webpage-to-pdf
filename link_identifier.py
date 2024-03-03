@@ -88,12 +88,73 @@ class Document:
 
         return resonite_string
 
+    @staticmethod
+    def parse_resonite_string(resonite_string: str):
+        char_index = 0
+
+        # Get the URL
+        # Find the index of the first "|" character
+        url_end_index = resonite_string.find("|", char_index)
+        url = resonite_string[char_index:url_end_index]
+        char_index += url_end_index + 1
+
+        # While we can find a ">" character...
+        while char_index < len(resonite_string):
+            # Get the page width and height
+            page_width_end_index = resonite_string.find("|", char_index)
+            page_width = float(resonite_string[char_index:page_width_end_index])
+            char_index = page_width_end_index + 1
+
+            page_height_end_index = resonite_string.find("|", char_index)
+            page_height = float(resonite_string[char_index:page_height_end_index])
+            char_index = page_height_end_index + 1
+
+            # While we can find a "<" character...
+            while resonite_string[char_index] == "<":
+                # Get the link's x origin
+                link_x_origin_end_index = resonite_string.find("|", char_index)
+                link_x_origin = float(resonite_string[char_index:link_x_origin_end_index])
+                char_index = link_x_origin_end_index + 1
+
+                # Get the link's y origin
+                link_y_origin_end_index = resonite_string.find("|", char_index)
+                link_y_origin = float(resonite_string[char_index:link_y_origin_end_index])
+                char_index = link_y_origin_end_index + 1
+
+                # Get the link's width
+                link_width_end_index = resonite_string.find("|", char_index)
+                link_width = float(resonite_string[char_index:link_width_end_index])
+                char_index = link_width_end_index + 1
+
+                # Get the link's height
+                link_height_end_index = resonite_string.find("|", char_index)
+                link_height = float(resonite_string[char_index:link_height_end_index])
+                char_index = link_height_end_index + 1
+
+                # Get the link's URI
+                link_uri_end_index = resonite_string.find("|", char_index)
+                link_uri = resonite_string[char_index:link_uri_end_index]
+                char_index = link_uri_end_index + 1
+
+                print(f"Link: x={link_x_origin}, y={link_y_origin}, width={link_width}, height={link_height}, uri={link_uri}")
+
+            # Move to the next page
+            char_index += 1
+
+        return
+
+
+
+
 if __name__ == "__main__":
     pdf_file_path = 'asdf.pdf'
     pdf_url = "http://dingo.pinkplayhouse.xyz:2095/pdfs/aHR0cDovL2FzZGYuY29t_1709245541.pdf"
     #pdf_path = 'resowiki.pdf'
 
-    document = Document(pdf_file_path, pdf_url)
-    print(document)
-    print()
-    print(document.get_resonite_string())
+    # document = Document(pdf_file_path, pdf_url)
+    # print(document)
+    # print()
+    # print(document.get_resonite_string())
+
+    rs = "http://dingo.pinkplayhouse.xyz:2095/pdfs/aHR0cDovL2FzZGYuY29t_1709245541.pdf|>612.0|792.0|<266.5|289.0|45.0|19.5|https://asdf.com/aboutasdf.html<315.25|321.25|30.0|19.5|https://asdf.com/whatisasdf.html<295.75|353.5|55.5|19.5|https://asdfforums.com/"
+    Document.parse_resonite_string(rs)

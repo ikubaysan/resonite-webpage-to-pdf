@@ -4,3 +4,4 @@ selenium
 webdriver-manager
 flask
 PyMuPDF
+selenium-wire

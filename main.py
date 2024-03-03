@@ -1,9 +1,9 @@
 from flask import Flask, request, send_from_directory, Response
 import time
-import undetected_chromedriver as uc
 import base64
 import os
 import logging
+import seleniumwire.undetected_chromedriver as uc
 
 """
 Options
@@ -55,12 +55,17 @@ class PDFConverter:
             time.sleep(0.1) # Prevent CPU hogging
         logging.warning(f"Webpage '{url}' did not reach readyState within {WEBPAGE_LOAD_SECONDS} seconds.")
 
-    def convert_webpage_to_pdf(self, url):
+    def convert_webpage_to_pdf(self, url) -> (str, int):
         try:
             driver = self.setup_undetected_chrome_driver()
             driver.set_page_load_timeout(WEBPAGE_TIMEOUT_SECONDS)
             driver.get(url)
-            logging.info(f"Accessed webpage '{url}' successfully. "
+            #for x in driver.requests:
+                #print(x.headers)
+
+            status_code = driver.last_request.response.status_code
+
+            logging.info(f"Accessed webpage '{url}' successfully, with HTTP status code {driver.last_request.response.status_code}. "
                          f"Waiting {WEBPAGE_LOAD_SECONDS} seconds for it to "
                          f"load before creating PDF...")
             PDFConverter.await_webpage_load(driver, url)
@@ -88,10 +93,10 @@ class PDFConverter:
 
             # Log the creation of the PDF file
             logging.info(f"PDF file created: {os.path.abspath(output_filename)}")
-            return safe_filename  # Return the safe filename for URL generation
+            return safe_filename, status_code  # Return the safe filename for URL generation
         except Exception as e:
             logging.error(f"Error converting URL to PDF: {e}")
-            return None
+            return None, None
 
 @app.route('/convert', methods=['GET'])
 def convert():
@@ -107,12 +112,13 @@ def convert():
     logging.info(f"Received request to convert URL: {url}")
 
     converter = PDFConverter()
-    safe_filename = converter.convert_webpage_to_pdf(url)
+    safe_filename, status_code = converter.convert_webpage_to_pdf(url)
     if safe_filename:
         # Determine base URL based on whether DOMAIN is set
         base_url = f"http://{DOMAIN}:2095" if DOMAIN else request.host_url.rstrip('/')
         pdf_url = f"{base_url}/pdfs/{safe_filename}"
-        return Response(pdf_url, mimetype='text/plain')
+        response_contents = f"{pdf_url}*{status_code}*"
+        return Response(response_contents, mimetype='text/plain')
     else:
         return Response("Failed to convert webpage to PDF.", status=500, mimetype='text/plain')
 
