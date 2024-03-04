@@ -4,29 +4,26 @@ import base64
 import os
 import logging
 import seleniumwire.undetected_chromedriver as uc
-
-"""
-Options
-"""
-HOST = "0.0.0.0"
-PORT = 2095
-
-# Set this to None if you don't want to use a custom domain for the URLs returned by the API
-DOMAIN = "dingo.pinkplayhouse.xyz"
-
-PDF_STORAGE_DIR = 'pdf_storage'
-# driver.get() webpage access timeout
-WEBPAGE_TIMEOUT_SECONDS = 10
-# After the webpage has been accessed, duration to wait for webpage to load before taking a screenshot
-WEBPAGE_LOAD_SECONDS = 10
-DUPLICATE_PDF_PRUNE_SECONDS = 60 * 60 * 24 * 7 # 7 days
-"""
-End of Options
-"""
-
+import configparser
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+config = configparser.ConfigParser()
+
+if not os.path.exists('config.ini'):
+    logging.error("config.ini file not found. Please make a copy of 'config_sample.ini', rename it to 'config.ini', and modify it accordingly.")
+    exit()
+
+config.read('config.ini')
+
+HOST = config.get('DEFAULT', 'HOST')
+PORT = config.getint('DEFAULT', 'PORT')
+DOMAIN = config.get('DEFAULT', 'DOMAIN', fallback=None)
+PDF_STORAGE_DIR = config.get('DEFAULT', 'PDF_STORAGE_DIR')
+WEBPAGE_TIMEOUT_SECONDS = config.getint('DEFAULT', 'WEBPAGE_TIMEOUT_SECONDS')
+WEBPAGE_LOAD_SECONDS = config.getint('DEFAULT', 'WEBPAGE_LOAD_SECONDS')
+DUPLICATE_PDF_PRUNE_SECONDS = config.getint('DEFAULT', 'DUPLICATE_PDF_PRUNE_SECONDS')
 
 app = Flask(__name__)
 

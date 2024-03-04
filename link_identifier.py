@@ -151,10 +151,10 @@ if __name__ == "__main__":
     pdf_url = "http://dingo.pinkplayhouse.xyz:2095/pdfs/aHR0cDovL2FzZGYuY29t_1709245541.pdf"
     #pdf_path = 'resowiki.pdf'
 
-    # document = Document(pdf_file_path, pdf_url)
-    # print(document)
-    # print()
-    # print(document.get_resonite_string())
+    document = Document(pdf_file_path, pdf_url)
+    print(document)
+    print()
+    print(document.get_resonite_string())
 
-    rs = "http://dingo.pinkplayhouse.xyz:2095/pdfs/aHR0cDovL2FzZGYuY29t_1709245541.pdf|>612.0|792.0|<266.5|289.0|45.0|19.5|https://asdf.com/aboutasdf.html<315.25|321.25|30.0|19.5|https://asdf.com/whatisasdf.html<295.75|353.5|55.5|19.5|https://asdfforums.com/"
-    Document.parse_resonite_string(rs)
+    #rs = "http://dingo.pinkplayhouse.xyz:2095/pdfs/aHR0cDovL2FzZGYuY29t_1709245541.pdf|>612.0|792.0|<266.5|289.0|45.0|19.5|https://asdf.com/aboutasdf.html<315.25|321.25|30.0|19.5|https://asdf.com/whatisasdf.html<295.75|353.5|55.5|19.5|https://asdfforums.com/"
+    #Document.parse_resonite_string(rs)
