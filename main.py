@@ -3,7 +3,7 @@ import time
 import base64
 import os
 import logging
-import seleniumwire.undetected_chromedriver as uc
+import undetected_chromedriver as uc
 import configparser
 
 # Setup logging
@@ -52,17 +52,21 @@ class PDFConverter:
             time.sleep(0.1) # Prevent CPU hogging
         logging.warning(f"Webpage '{url}' did not reach readyState within {WEBPAGE_LOAD_SECONDS} seconds.")
 
+
+    def get_http_status_code(self, driver) -> int:
+        current_url = driver.current_url
+        status_code = driver.execute_script('return fetch(arguments[0], {method: "GET"}).then(response => response.status);', current_url)
+        return status_code
+
     def convert_webpage_to_pdf(self, url) -> (str, int):
         try:
             driver = self.setup_undetected_chrome_driver()
             driver.set_page_load_timeout(WEBPAGE_TIMEOUT_SECONDS)
             driver.get(url)
-            #for x in driver.requests:
-                #print(x.headers)
 
-            status_code = driver.last_request.response.status_code
+            status_code = self.get_http_status_code(driver)
 
-            logging.info(f"Accessed webpage '{url}' successfully, with HTTP status code {driver.last_request.response.status_code}. "
+            logging.info(f"Accessed webpage '{url}' successfully, with HTTP status code {status_code}. "
                          f"Waiting {WEBPAGE_LOAD_SECONDS} seconds for it to "
                          f"load before creating PDF...")
             PDFConverter.await_webpage_load(driver, url)

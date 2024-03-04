@@ -1,18 +1,17 @@
 import undetected_chromedriver as uc
-from undetected_chromedriver import Chrome, ChromeOptions
+from undetected_chromedriver import ChromeOptions
 
 # Initialize ChromeOptions
 options = ChromeOptions()
 
 # Implicit wait
-options.add_argument("--wait-for-browser")
 options.add_argument("--headless")
 
 # Initialize undetected Chrome driver
 driver = uc.Chrome(options=options)
 
 # URL launchS
-driver.get("https://www.ebay.com/arsdawfpgawfp")
+driver.get("https://www.ebay.com/")
 
 # Get current URL
 current_url = driver.current_url
