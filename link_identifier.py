@@ -65,16 +65,16 @@ class Document:
         LINK0_URI<LINK1_X_ORIGIN|LINK1_Y_ORIGIN|LINK1_WIDTH|LINK1_HEIGHT|LINK1_URI
         """
 
-        resonite_string = f"{self.url}|"
+        resonite_string = f"{self.url}"
+        resonite_string += f"*200*" # Add a dummy HTTP status code
+
+        resonite_string += f"{len(self.pages)}"
 
         for page in self.pages:
-            resonite_string += ">" # Indicate start of a new page
-
             # The first two |-delimited values are the width and height of the page
-            resonite_string += f"{page.size[0]}|{page.size[1]}|"
-
+            resonite_string += f"|{page.size[0]}|{page.size[1]}|"
+            resonite_string += f"{len(page.links)}|"
             for link in page.links:
-                resonite_string += "<" # Indicate start of a link object
                 # Write link's x origin, delimited with a pipe
                 resonite_string += f"{link.origin[0]}|"
                 # Write link's y origin, delimited with a pipe
@@ -84,7 +84,7 @@ class Document:
                 # Write link's height, delimited with a pipe
                 resonite_string += f"{link.bounds_height}|"
                 # Write link's URI
-                resonite_string += f"{link.uri}"
+                resonite_string += f"{link.uri}|"
 
         return resonite_string
 
@@ -143,6 +143,38 @@ class Document:
 
         return
 
+def parse_resonite_string(resonite_string: str):
+    substrings = []
+    current_substring_start_index = 0
+
+    for i in range(len(resonite_string)):
+        if resonite_string[i] == "|":
+            substrings.append(resonite_string[current_substring_start_index:i])
+            current_substring_start_index = i + 1
+
+    page_count = int(substrings[0])
+    current_substring_index = 1
+    for i in range(page_count):
+        page_width = substrings[current_substring_index]
+        current_substring_index += 1
+        page_height = substrings[current_substring_index]
+        current_substring_index += 1
+        link_count = int(substrings[current_substring_index])
+        print(f"Page: width={page_width}, height={page_height}, link_count={link_count}")
+        current_substring_index += 1
+        for j in range(link_count):
+            link_x_origin = substrings[current_substring_index]
+            current_substring_index += 1
+            link_y_origin = substrings[current_substring_index]
+            current_substring_index += 1
+            link_width = substrings[current_substring_index]
+            current_substring_index += 1
+            link_height = substrings[current_substring_index]
+            current_substring_index += 1
+            link_uri = substrings[current_substring_index]
+            current_substring_index += 1
+            print(f"Link: x={link_x_origin}, y={link_y_origin}, width={link_width}, height={link_height}, uri={link_uri}")
+    return
 
 
 
@@ -154,7 +186,17 @@ if __name__ == "__main__":
     document = Document(pdf_file_path, pdf_url)
     print(document)
     print()
-    print(document.get_resonite_string())
+
+    resonite_string = document.get_resonite_string()
+    #print(resonite_string)
+
+    # Removed the URL and status code
+    #resonite_string_trimmed = '>612.0|792.0<266.5|289.0|45.0|19.5|https://asdf.com/aboutasdf.html<315.25|321.25|30.0|19.5|https://asdf.com/whatisasdf.html<295.75|353.5|55.5|19.5|https://asdfforums.com/'
+
+    resonite_string_trimmed = "1|612.0|792.0|3|266.5|289.0|45.0|19.5|https://asdf.com/aboutasdf.html|315.25|321.25|30.0|19.5|https://asdf.com/whatisasdf.html|295.75|353.5|55.5|19.5|https://asdfforums.com/|"
+    print(resonite_string_trimmed)
+
+    parse_resonite_string(resonite_string_trimmed)
 
     #rs = "http://dingo.pinkplayhouse.xyz:2095/pdfs/aHR0cDovL2FzZGYuY29t_1709245541.pdf|>612.0|792.0|<266.5|289.0|45.0|19.5|https://asdf.com/aboutasdf.html<315.25|321.25|30.0|19.5|https://asdf.com/whatisasdf.html<295.75|353.5|55.5|19.5|https://asdfforums.com/"
     #Document.parse_resonite_string(rs)
