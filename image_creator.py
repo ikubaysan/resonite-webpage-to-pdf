@@ -58,6 +58,7 @@ class ImageConverter:
         status_code = driver.execute_script('return fetch(arguments[0], {method: "GET"}).then(response => response.status);', current_url)
         return status_code
 
+
     def convert_webpage_to_image(self, url) -> (str, int):
         try:
             driver = self.setup_undetected_chrome_driver()
@@ -68,6 +69,12 @@ class ImageConverter:
 
             logging.info(f"Accessed webpage '{url}' successfully, with HTTP status code {status_code}.")
             ImageConverter.await_webpage_load(driver, url)
+
+            # Determine the height of the webpage
+            total_height = driver.execute_script("return document.body.parentNode.scrollHeight")
+
+            # Resize window to the full height of the webpage to capture all content
+            driver.set_window_size(1920, total_height)  # Width is set to 1920, or any other width you prefer
 
             encoded_url = base64.urlsafe_b64encode(url.encode('utf-8')).decode('utf-8')
 
@@ -89,6 +96,7 @@ class ImageConverter:
         except Exception as e:
             logging.error(f"Error converting URL to image: {e}")
             return None, None
+
 
 @app.route('/convert', methods=['GET'])
 def convert():
