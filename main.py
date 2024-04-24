@@ -4,7 +4,13 @@ import base64
 import os
 import logging
 import undetected_chromedriver as uc
+from webdriver_manager.chrome import ChromeDriverManager
+import chromedriver_autoinstaller
+from webdriver_manager.core.os_manager import ChromeType
 import configparser
+
+# Update chromium:
+# sudo snap refresh chromium
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -37,6 +43,7 @@ class PDFConverter:
     def setup_undetected_chrome_driver():
         options = uc.ChromeOptions()
         options.add_argument('--headless')
+        chromedriver_autoinstaller.install()
         driver = uc.Chrome(options=options)
         return driver
 

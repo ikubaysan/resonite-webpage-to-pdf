@@ -144,43 +144,39 @@ class Document:
         return
 
 def parse_resonite_string(resonite_string: str):
-    substrings = []
-    current_substring_start_index = 0
+    def get_next_substring(s: str, start_index: int) -> (str, int):
+        end_index = s.find('|', start_index)
+        if end_index == -1:  # No more delimiters, return the rest of the string
+            return s[start_index:], len(s)
+        substring_length = end_index - start_index
+        return s[start_index:start_index + substring_length], end_index + 1
 
-    for i in range(len(resonite_string)):
-        if resonite_string[i] == "|":
-            substrings.append(resonite_string[current_substring_start_index:i])
-            current_substring_start_index = i + 1
+    index = 0
+    page_count_str, index = get_next_substring(resonite_string, index)
+    page_count = int(page_count_str)
 
-    page_count = int(substrings[0])
-    current_substring_index = 1
-    for i in range(page_count):
-        page_width = substrings[current_substring_index]
-        current_substring_index += 1
-        page_height = substrings[current_substring_index]
-        current_substring_index += 1
-        link_count = int(substrings[current_substring_index])
+    for _ in range(page_count):
+        page_width, index = get_next_substring(resonite_string, index)
+        page_height, index = get_next_substring(resonite_string, index)
+        link_count_str, index = get_next_substring(resonite_string, index)
+        link_count = int(link_count_str)
         print(f"Page: width={page_width}, height={page_height}, link_count={link_count}")
-        current_substring_index += 1
-        for j in range(link_count):
-            link_x_origin = substrings[current_substring_index]
-            current_substring_index += 1
-            link_y_origin = substrings[current_substring_index]
-            current_substring_index += 1
-            link_width = substrings[current_substring_index]
-            current_substring_index += 1
-            link_height = substrings[current_substring_index]
-            current_substring_index += 1
-            link_uri = substrings[current_substring_index]
-            current_substring_index += 1
+
+        for _ in range(link_count):
+            link_x_origin, index = get_next_substring(resonite_string, index)
+            link_y_origin, index = get_next_substring(resonite_string, index)
+            link_width, index = get_next_substring(resonite_string, index)
+            link_height, index = get_next_substring(resonite_string, index)
+            link_uri, index = get_next_substring(resonite_string, index)
             print(f"Link: x={link_x_origin}, y={link_y_origin}, width={link_width}, height={link_height}, uri={link_uri}")
-    return
+
 
 
 
 if __name__ == "__main__":
-    pdf_file_path = 'asdf.pdf'
-    pdf_url = "http://dingo.pinkplayhouse.xyz:2095/pdfs/aHR0cDovL2FzZGYuY29t_1709245541.pdf"
+    pdf_file_path = "./pdf_storage/aHR0cDovL2FzZGYuY29tLw==_1712816728.pdf"
+    pdf_url = "http://dingo.pinkplayhouse.xyz:2095/pdfs/aHR0cDovL2FzZGYuY29tLw==_1712816728.pdf"
+
     #pdf_path = 'resowiki.pdf'
 
     document = Document(pdf_file_path, pdf_url)
@@ -188,15 +184,15 @@ if __name__ == "__main__":
     print()
 
     resonite_string = document.get_resonite_string()
-    #print(resonite_string)
+    print(resonite_string)
 
     # Removed the URL and status code
     #resonite_string_trimmed = '>612.0|792.0<266.5|289.0|45.0|19.5|https://asdf.com/aboutasdf.html<315.25|321.25|30.0|19.5|https://asdf.com/whatisasdf.html<295.75|353.5|55.5|19.5|https://asdfforums.com/'
 
-    resonite_string_trimmed = "1|612.0|792.0|3|266.5|289.0|45.0|19.5|https://asdf.com/aboutasdf.html|315.25|321.25|30.0|19.5|https://asdf.com/whatisasdf.html|295.75|353.5|55.5|19.5|https://asdfforums.com/|"
-    print(resonite_string_trimmed)
+    #resonite_string_trimmed = "1|612.0|792.0|3|266.5|289.0|45.0|19.5|https://asdf.com/aboutasdf.html|315.25|321.25|30.0|19.5|https://asdf.com/whatisasdf.html|295.75|353.5|55.5|19.5|https://asdfforums.com/|"
+    #print(resonite_string_trimmed)
 
-    parse_resonite_string(resonite_string_trimmed)
+    #parse_resonite_string(resonite_string_trimmed)
 
     #rs = "http://dingo.pinkplayhouse.xyz:2095/pdfs/aHR0cDovL2FzZGYuY29t_1709245541.pdf|>612.0|792.0|<266.5|289.0|45.0|19.5|https://asdf.com/aboutasdf.html<315.25|321.25|30.0|19.5|https://asdf.com/whatisasdf.html<295.75|353.5|55.5|19.5|https://asdfforums.com/"
     #Document.parse_resonite_string(rs)

@@ -4,4 +4,4 @@ selenium
 webdriver-manager
 flask
 PyMuPDF
-selenium-wire
+chromedriver-autoinstaller
