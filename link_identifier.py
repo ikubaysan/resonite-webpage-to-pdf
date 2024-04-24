@@ -7,7 +7,10 @@ class Link:
         self.bounds = bounds  # (x0, y0, x1, y1)
         self.bounds_width = bounds[2] - bounds[0]
         self.bounds_height = bounds[3] - bounds[1]
-        self.origin = (bounds[0], bounds[1])
+        #self.origin = (bounds[0], bounds[1])
+        self.origin = (bounds[0], bounds[3])
+        #self.origin = (bounds[2], bounds[3])
+        #self.origin = (bounds[2], bounds[1])
 
     def __repr__(self):
         return f"Link(uri={self.uri}, bounds={self.bounds}) bounds_width={self.bounds_width}, bounds_height={self.bounds_height}, origin={self.origin}"
@@ -50,7 +53,7 @@ class Document:
         return f"Document(path={self.local_file_path}, pages={self.pages})"
 
 
-    def get_resonite_string(self) -> str:
+    def get_resonite_string(self, include_request_data: bool) -> str:
         """
         :return:
         A string of this structure, without the line breaks.
@@ -65,8 +68,11 @@ class Document:
         LINK0_URI<LINK1_X_ORIGIN|LINK1_Y_ORIGIN|LINK1_WIDTH|LINK1_HEIGHT|LINK1_URI
         """
 
-        resonite_string = f"{self.url}"
-        resonite_string += f"*200*" # Add a dummy HTTP status code
+        if include_request_data:
+            resonite_string = f"{self.url}"
+            resonite_string += f"*200*" # Add a dummy HTTP status code
+        else:
+            resonite_string = ""
 
         resonite_string += f"{len(self.pages)}"
 
@@ -183,7 +189,7 @@ if __name__ == "__main__":
     print(document)
     print()
 
-    resonite_string = document.get_resonite_string()
+    resonite_string = document.get_resonite_string(include_request_data=False)
     print(resonite_string)
 
     # Removed the URL and status code
