@@ -26,3 +26,7 @@ Request:
 
 Response:
 `http://10.0.0.106:2099/pdfs/aHR0cDovL2JpbmcuY29t.pdf`
+
+# Notes
+If you need to update chromium, and you installed it with snap:
+`sudo snap refresh chromium`

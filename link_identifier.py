@@ -44,6 +44,11 @@ class Document:
                     # Ignore non-http and non-https links
                     if not link['uri'].startswith('http'):
                         continue
+
+                    if (link['from'].y0 > page.rect.height / 0.75) or (link['from'].y1 > page.rect.height / 0.75):
+                        # just a test
+                        continue
+
                     link_obj = Link(link['uri'], (link['from'].x0, link['from'].y0, link['from'].x1, link['from'].y1))
                     page_obj.add_link(link_obj)
             self.pages.append(page_obj)
@@ -180,8 +185,8 @@ def parse_resonite_string(resonite_string: str):
 
 
 if __name__ == "__main__":
-    pdf_file_path = "./pdf_storage/aHR0cDovL2FzZGYuY29tLw==_1712816728.pdf"
-    pdf_url = "http://dingo.pinkplayhouse.xyz:2095/pdfs/aHR0cDovL2FzZGYuY29tLw==_1712816728.pdf"
+    pdf_file_path = "./pdf_storage/aHR0cHM6Ly93d3cubmV3Z3JvdW5kcy5jb20=_1709186486.pdf"
+    pdf_url = "http://dingo.pinkplayhouse.xyz:2095/pdfs/aHR0cHM6Ly93d3cubmV3Z3JvdW5kcy5jb20=_1709186486.pdf"
 
     #pdf_path = 'resowiki.pdf'
 

@@ -5,3 +5,5 @@ config.ini
 venv/
 __pycache__/
 *.pdf
+image_storage/
+pdf_storage/
