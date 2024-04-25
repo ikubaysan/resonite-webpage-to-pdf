@@ -7,6 +7,7 @@ import logging
 import undetected_chromedriver as uc
 import chromedriver_autoinstaller
 import configparser
+from selenium.webdriver.common.by import By
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -166,13 +167,13 @@ class ImageConverter:
 
             logging.info(f"Image file created: {os.path.abspath(output_filename)}")
 
-            # clickable_elements = driver.find_elements(By.TAG_NAME, "a")
-            # for element in clickable_elements:
-            #     if not element.get_attribute('onclick'):
-            #         if element.size['width'] > 0 and element.size['height'] > 0 and element.location['x'] > 0 and element.location['y'] > 0:
-            #             print(f"Tag: {element.tag_name}, x={element.location['x']}, y={element.location['y']}, "
-            #                   f"width={element.size['width']}, height={element.size['height']}, "
-            #                   f"href={element.get_attribute('href')}")
+            clickable_elements = driver.find_elements(By.TAG_NAME, "a")
+            for element in clickable_elements:
+                if not element.get_attribute('onclick'):
+                    if element.size['width'] > 0 and element.size['height'] > 0 and element.location['x'] > 0 and element.location['y'] > 0:
+                        print(f"Tag: {element.tag_name}, x={element.location['x']}, y={element.location['y']}, "
+                              f"width={element.size['width']}, height={element.size['height']}, "
+                              f"href={element.get_attribute('href')}")
 
             return safe_filename, status_code
         except Exception as e:
@@ -184,8 +185,10 @@ class ImageConverter:
 class FlaskWebApp:
     def __init__(self, config_path: str = 'config.ini'):
 
-        if not os.path.exists('config.ini'):
-            logging.error("config.ini file not found. Please make a copy of 'config_sample.ini', rename it to 'config.ini', and modify it accordingly.")
+        if not os.path.exists(config_path):
+            logging.error(f"{config_path} file not found. "
+                          f"Please make a copy of 'config_sample.ini', "
+                          f"rename it to '{config_path}', and modify it accordingly.")
             exit()
 
         self.app = Flask(__name__)

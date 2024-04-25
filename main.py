@@ -12,11 +12,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 config = configparser.ConfigParser()
 
-if not os.path.exists('config.ini'):
-    logging.error("config.ini file not found. Please make a copy of 'config_sample.ini', rename it to 'config.ini', and modify it accordingly.")
+CONFIG_FILE = 'config.ini'
+if not os.path.exists(CONFIG_FILE):
+    logging.error(f"{CONFIG_FILE} file not found. Please make a copy of 'config_sample.ini', rename it to 'config.ini', and modify it accordingly.")
     exit()
 
-config.read('config.ini')
+config.read(CONFIG_FILE)
 
 HOST = config.get('DEFAULT', 'HOST')
 PORT = config.getint('DEFAULT', 'PORT_PDF')
