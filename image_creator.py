@@ -12,6 +12,21 @@ from selenium.webdriver.common.by import By
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+config_path = "config.ini"
+config = configparser.ConfigParser()
+config.read(config_path)
+
+HOST = config.get('DEFAULT', 'HOST')
+PORT = config.getint('DEFAULT', 'PORT_IMAGE')
+DOMAIN = config.get('DEFAULT', 'DOMAIN', fallback=None)
+IMAGE_STORAGE_DIR = config.get('DEFAULT', 'IMAGE_STORAGE_DIR')
+WEBPAGE_TIMEOUT_SECONDS = config.getint('DEFAULT', 'WEBPAGE_TIMEOUT_SECONDS')
+WEBPAGE_LOAD_SECONDS = config.getint('DEFAULT', 'WEBPAGE_LOAD_SECONDS')
+DUPLICATE_IMAGE_PRUNE_SECONDS = config.getint('DEFAULT', 'DUPLICATE_IMAGE_PRUNE_SECONDS')
+IMAGE_DEFAULT_WINDOW_WIDTH = config.getint('DEFAULT', 'IMAGE_DEFAULT_WINDOW_WIDTH')
+IMAGE_DEFAULT_WINDOW_HEIGHT = config.getint('DEFAULT', 'IMAGE_DEFAULT_WINDOW_HEIGHT')
+
+
 class WebDriverManager:
     def __init__(self, webpage_timeout_seconds: int):
         self.driver = None
@@ -55,7 +70,7 @@ class WebDriverManager:
                 # Check if the element is likely to cause a URL change
                 if clickable_element.tag_name.lower() == 'a' and clickable_element.get_attribute('href'):
                     logging.info("Element will change the URL. Adjusting window size.")
-                    self.driver.set_window_size(1920, 1080)
+                    self.driver.set_window_size(IMAGE_DEFAULT_WINDOW_WIDTH, IMAGE_DEFAULT_WINDOW_HEIGHT)
                 # Execute a click directly via JavaScript
                 self.driver.execute_script("arguments[0].click();", clickable_element)
                 return True
@@ -131,8 +146,8 @@ class ImageConverter:
         try:
             if url:
                 # Reset window size to a default value before resizing according to content
-                driver.set_window_size(1920, 1080)  # Default window size
-                logging.info("Window size reset to default 1920x1080 because a URL was provided.")
+                driver.set_window_size(IMAGE_DEFAULT_WINDOW_WIDTH, IMAGE_DEFAULT_WINDOW_HEIGHT)  # Default window size
+                logging.info(f"Window size reset to default {IMAGE_DEFAULT_WINDOW_WIDTH}x{IMAGE_DEFAULT_WINDOW_HEIGHT} because a URL was provided.")
                 driver.get(url)
             else:
                 logging.info("No URL provided. Using the current URL in the WebDriver.")
@@ -150,8 +165,8 @@ class ImageConverter:
             total_height = driver.execute_script("return document.documentElement.scrollHeight")
 
             # Resize window to the full height of the webpage to capture all content
-            driver.set_window_size(1920, total_height)  # Width is set to 1920, or any other width you prefer
-            logging.info(f"Resized window to 1920x{total_height}")
+            driver.set_window_size(IMAGE_DEFAULT_WINDOW_WIDTH, total_height)
+            logging.info(f"Resized window to {IMAGE_DEFAULT_WINDOW_WIDTH}x{total_height}")
             driver.execute_script("window.scrollTo(0, 0)")
 
             encoded_url = base64.urlsafe_b64encode(url.encode('utf-8')).decode('utf-8')
@@ -192,23 +207,13 @@ class FlaskWebApp:
             exit()
 
         self.app = Flask(__name__)
-        config = configparser.ConfigParser()
-        config.read(config_path)
 
-        self.HOST = config.get('DEFAULT', 'HOST')
-        self.PORT = config.getint('DEFAULT', 'PORT_IMAGE')
-        self.DOMAIN = config.get('DEFAULT', 'DOMAIN', fallback=None)
-        self.IMAGE_STORAGE_DIR = config.get('DEFAULT', 'IMAGE_STORAGE_DIR')
-        self.WEBPAGE_TIMEOUT_SECONDS = config.getint('DEFAULT', 'WEBPAGE_TIMEOUT_SECONDS')
-        self.WEBPAGE_LOAD_SECONDS = config.getint('DEFAULT', 'WEBPAGE_LOAD_SECONDS')
-        self.DUPLICATE_IMAGE_PRUNE_SECONDS = config.getint('DEFAULT', 'DUPLICATE_IMAGE_PRUNE_SECONDS')
-
-        self.image_converter = ImageConverter(storage_dir=self.IMAGE_STORAGE_DIR,
-                                                webpage_load_seconds=self.WEBPAGE_LOAD_SECONDS,
-                                                duplicate_image_prune_seconds=self.DUPLICATE_IMAGE_PRUNE_SECONDS)
+        self.image_converter = ImageConverter(storage_dir=IMAGE_STORAGE_DIR,
+                                                webpage_load_seconds=WEBPAGE_LOAD_SECONDS,
+                                                duplicate_image_prune_seconds=DUPLICATE_IMAGE_PRUNE_SECONDS)
 
         self.setup_routes()
-        self.web_driver_manager = WebDriverManager(webpage_timeout_seconds=self.WEBPAGE_TIMEOUT_SECONDS)
+        self.web_driver_manager = WebDriverManager(webpage_timeout_seconds=WEBPAGE_TIMEOUT_SECONDS)
         return
 
     def setup_routes(self):
@@ -217,7 +222,7 @@ class FlaskWebApp:
         self.app.add_url_rule('/click', 'click', self.click, methods=['GET'])
 
     def run(self):
-        self.app.run(host=self.HOST, port=self.PORT)
+        self.app.run(host=HOST, port=PORT)
 
     def click(self):
         # Clicks at the provided x, y coordinates on the currently loaded webpage, if any
@@ -234,7 +239,7 @@ class FlaskWebApp:
             # We need to create a new image after the click, and return the URL
             safe_filename, status_code = self.image_converter.convert_webpage_to_image(self.web_driver_manager.driver, url=None)
             if safe_filename:
-                base_url = f"http://{self.DOMAIN}:{self.PORT}" if self.DOMAIN else request.host_url.rstrip('/')
+                base_url = f"http://{DOMAIN}:{PORT}" if DOMAIN else request.host_url.rstrip('/')
                 image_url = f"{base_url}/images/{safe_filename}"
                 response_contents = f"{image_url}*{status_code}*"
                 return Response(response_contents, mimetype='text/plain')
@@ -259,7 +264,7 @@ class FlaskWebApp:
         safe_filename, status_code = self.image_converter.convert_webpage_to_image(driver, url)
 
         if safe_filename:
-            base_url = f"http://{self.DOMAIN}:{self.PORT}" if self.DOMAIN else request.host_url.rstrip('/')
+            base_url = f"http://{DOMAIN}:{PORT}" if DOMAIN else request.host_url.rstrip('/')
             image_url = f"{base_url}/images/{safe_filename}"
             response_contents = f"{image_url}*{status_code}*"
             return Response(response_contents, mimetype='text/plain')
@@ -267,12 +272,12 @@ class FlaskWebApp:
             return Response("Failed to convert webpage to image.", status=500, mimetype='text/plain')
 
     def serve_image(self, filename):
-        actual_path = os.path.join(self.IMAGE_STORAGE_DIR, filename)
+        actual_path = os.path.join(IMAGE_STORAGE_DIR, filename)
         logging.info(f"Attempting to serve image file: {actual_path}")
         if not os.path.exists(actual_path):
             logging.error(f"File not found: {actual_path}")
             return Response("File not found.", status=404)
-        return send_from_directory(self.IMAGE_STORAGE_DIR, filename, as_attachment=False)
+        return send_from_directory(IMAGE_STORAGE_DIR, filename, as_attachment=False)
 
 
 if __name__ == "__main__":
