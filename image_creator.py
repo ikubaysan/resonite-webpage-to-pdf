@@ -43,7 +43,7 @@ class WebDriverManager:
         # Scroll the window to the y-coordinate minus half the window height to ensure the element is in the view
         logging.info(f"Clicking at x={x}, y={y}")
         self.driver.execute_script("window.scrollTo(0, arguments[0] - window.innerHeight / 2);", y)
-        time.sleep(0.5)  # Allow some time for any dynamic content to settle
+        time.sleep(0.1)  # Allow time for dynamic content
 
         # Retrieve the element at the given x, y coordinates
         element = self.driver.execute_script("return document.elementFromPoint(arguments[0], arguments[1]);", x, y)
@@ -51,7 +51,10 @@ class WebDriverManager:
             # Check if the element itself or any of its parents are clickable
             clickable_element = self.get_clickable_element(element)
             if clickable_element:
-                print(f"Element is clickable. Tag: {clickable_element.tag_name}")
+                # Check if the element is likely to cause a URL change
+                if clickable_element.tag_name.lower() == 'a' and clickable_element.get_attribute('href'):
+                    logging.info("Element will change the URL. Adjusting window size.")
+                    self.driver.set_window_size(1920, 1080)
                 # Execute a click directly via JavaScript
                 self.driver.execute_script("arguments[0].click();", clickable_element)
                 return True
@@ -70,12 +73,13 @@ class WebDriverManager:
                 tag_name = element.tag_name.lower() if element.tag_name else ''
                 onclick = element.get_attribute('onclick')
                 role = element.get_attribute('role')
+                href = element.get_attribute('href')
             except Exception as e:
                 # Handle exceptions, which can happen if the element is stale or the WebDriver loses reference to it
                 print(f"Error accessing element properties: {e}")
                 return None
 
-            if tag_name in ['a', 'button'] or onclick:
+            if tag_name in ['a', 'button'] or onclick or (href and tag_name == 'a'):
                 return element
             if role == 'button':
                 return element
