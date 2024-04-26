@@ -9,7 +9,9 @@ import chromedriver_autoinstaller
 import configparser
 from selenium.webdriver.common.by import By
 from urllib.parse import urlparse
+import validators
 from abc import ABC, abstractmethod
+
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -267,15 +269,22 @@ class ImageConverter(Converter):
             return None, None
 
 
-
 def is_valid_url(url):
-    try:
-        result = urlparse(url)
-        # Check if the scheme is http or https and the netloc (domain name) is present.
-        return all([result.scheme in ["http", "https"], result.netloc])
-    except:
-        return False
+    """
+    Validates whether a given string is a valid URL. Adds 'http://' if no protocol is specified.
 
+    Args:
+    url (str): The URL string to validate.
+
+    Returns:
+    bool: True if the string is a valid URL, False otherwise.
+    """
+    # Check if the URL has a protocol, if not prepend 'http://'
+    if not url.startswith(('http://', 'https://')):
+        url = 'http://' + url
+
+    result = validators.url(url)
+    return True if result else False
 
 class FlaskWebApp:
     def __init__(self, config_path: str = 'config.ini'):
@@ -336,14 +345,16 @@ class FlaskWebApp:
 
 
     def sanitize_url(self, url: str):
-        if not (url.startswith('http://') or url.startswith('https://')):
-            url = 'http://' + url
-
         url = url.strip()
 
-        if not is_valid_url(url):
+        if is_valid_url(url):
+            logging.info(f"Confirmed URL is valid: {url}")
+        else:
             logging.info(f"Invalid URL: {url}. Attempting to convert to Google search URL.")
             url = Converter.query_to_google_search_url(url)
+
+        if not (url.startswith('http://') or url.startswith('https://')):
+            url = 'http://' + url
 
         return url
 
