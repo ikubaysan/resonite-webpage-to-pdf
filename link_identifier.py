@@ -7,10 +7,11 @@ class Link:
         self.bounds = bounds  # (x0, y0, x1, y1)
         self.bounds_width = bounds[2] - bounds[0]
         self.bounds_height = bounds[3] - bounds[1]
-        #self.origin = (bounds[0], bounds[1])
-        self.origin = (bounds[0], bounds[3])
-        #self.origin = (bounds[2], bounds[3])
-        #self.origin = (bounds[2], bounds[1])
+        # OLD:
+        self.origin = (bounds[0], bounds[1])
+
+        # NEW:
+        #self.origin = (bounds[0], bounds[3])
 
     def __repr__(self):
         return f"Link(uri={self.uri}, bounds={self.bounds}) bounds_width={self.bounds_width}, bounds_height={self.bounds_height}, origin={self.origin}"
@@ -44,11 +45,6 @@ class Document:
                     # Ignore non-http and non-https links
                     if not link['uri'].startswith('http'):
                         continue
-
-                    if (link['from'].y0 > page.rect.height / 0.75) or (link['from'].y1 > page.rect.height / 0.75):
-                        # just a test
-                        continue
-
                     link_obj = Link(link['uri'], (link['from'].x0, link['from'].y0, link['from'].x1, link['from'].y1))
                     page_obj.add_link(link_obj)
             self.pages.append(page_obj)
@@ -185,10 +181,8 @@ def parse_resonite_string(resonite_string: str):
 
 
 if __name__ == "__main__":
-    pdf_file_path = "./pdf_storage/aHR0cHM6Ly93d3cubmV3Z3JvdW5kcy5jb20=_1709186486.pdf"
+    pdf_file_path = "./pdf_storage/aHR0cHM6Ly9naXRodWIuY29tL2lrdWJheXNhbi9yZXNvbml0ZS13ZWJwYWdlLXRvLXBkZg==_1714165892.pdf"
     pdf_url = "http://dingo.pinkplayhouse.xyz:2095/pdfs/aHR0cHM6Ly93d3cubmV3Z3JvdW5kcy5jb20=_1709186486.pdf"
-
-    #pdf_path = 'resowiki.pdf'
 
     document = Document(pdf_file_path, pdf_url)
     print(document)

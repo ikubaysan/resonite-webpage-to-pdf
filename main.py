@@ -11,6 +11,10 @@ from selenium.webdriver.common.by import By
 from urllib.parse import urlparse
 import validators
 from abc import ABC, abstractmethod
+from typing import List, Tuple, Union
+import fitz  # PyMuPDF
+from LinkIdentification.Document import Document
+from LinkIdentification.DocumentCollection import DocumentCollection
 
 
 # Setup logging
@@ -139,18 +143,48 @@ class Converter(ABC):
         return base_url + encoded_query
 
 
+class Link:
+    def __init__(self, uri: str, bounds: Tuple[float, float, float, float], page_width: float, page_height: float):
+        self.uri = uri
+        self.bounds = bounds  # (x0, y0, x1, y1)
+        self.bounds_width = bounds[2] - bounds[0]
+        self.bounds_height = bounds[3] - bounds[1]
+        # Normalize bounds
+        self.normalized_bounds = (
+            bounds[0] / page_width,
+            bounds[1] / page_height,
+            bounds[2] / page_width,
+            bounds[3] / page_height
+        )
+
+    def __repr__(self):
+        return f"Link(uri={self.uri}, bounds={self.bounds}, normalized_bounds={self.normalized_bounds}, bounds_width={self.bounds_width}, bounds_height={self.bounds_height})"
+
+class Page:
+    def __init__(self, number: int, size: Tuple[float, float]):
+        self.number = number
+        self.size = size  # (width, height)
+        self.links: List[Link] = []
+
+    def add_link(self, link: Link):
+        self.links.append(link)
+
+    def __repr__(self):
+        return f"Page(number={self.number}, size={self.size}, links={self.links})"
+
 class PDFConverter(Converter):
+
     def __init__(self, storage_dir: str, webpage_load_seconds: int, duplicate_pdf_prune_seconds: int):
         self.storage_dir = storage_dir
         self.webpage_load_seconds = webpage_load_seconds
         self.duplicate_pdf_prune_seconds = duplicate_pdf_prune_seconds
+        self.document_collection = DocumentCollection()
 
         if not os.path.exists(storage_dir):
             os.makedirs(storage_dir)
 
     def convert_webpage(self, driver, url: str = None) -> (str, int):
         try:
-
             if not url:
                 logging.info("No URL provided. Using the current URL in the WebDriver.")
                 url = driver.current_url
@@ -167,7 +201,15 @@ class PDFConverter(Converter):
             if not await_webpage_load_result:
                 logging.warning(f"Webpage '{url}' did not reach readyState within {self.webpage_load_seconds} seconds.")
 
-            result = driver.execute_cdp_cmd("Page.printToPDF", {"landscape": False, "printBackground": True})
+            result = driver.execute_cdp_cmd("Page.printToPDF", {
+                "landscape": False,
+                "printBackground": True,
+                "marginTop": 0,
+                "marginBottom": 0,
+                "marginLeft": 0,
+                "marginRight": 0,
+                "preferCSSPageSize": True
+            })
 
             encoded_url = base64.urlsafe_b64encode(url.encode('utf-8')).decode('utf-8')
 
@@ -178,26 +220,48 @@ class PDFConverter(Converter):
                         os.remove(os.path.join(self.storage_dir, file))
 
             safe_filename = f"{encoded_url}_{int(time.time())}.pdf"
-            output_filename = os.path.join(self.storage_dir, safe_filename)
+            output_file_path = os.path.join(self.storage_dir, safe_filename)
 
-            with open(output_filename, "wb") as f:
+            with open(output_file_path, "wb") as f:
                 f.write(base64.b64decode(result['data']))
 
-            logging.info(f"PDF file created: {os.path.abspath(output_filename)}")
+            logging.info(f"PDF file created: {os.path.abspath(output_file_path)}")
+
+            self.document_collection.add_document(local_file_path=output_file_path)
+
             return safe_filename, status_code
         except Exception as e:
             logging.error(f"Error converting URL to PDF: {e}")
             return None, None
 
-    def setup_undetected_chrome_driver(self):
-        options = uc.ChromeOptions()
-        options.add_argument('--headless')
-        chromedriver_autoinstaller.install()
-        driver = uc.Chrome(options=options)
-        driver.set_page_load_timeout(WEBPAGE_TIMEOUT_SECONDS)
-        return driver
+    def click(self, driver, normalized_x: float, normalized_y: float, page_number: int, pdf_filename: str) -> (bool, str, int):
+        """
+        :param driver:
+        :param normalized_x:
+        :param normalized_y:
+        :param page_number:
+        :param pdf_filename:
+        :return: bool - True if a URL was found and clicked, False otherwise.
+        str - the filename of the PDF created, or None if no URL was found.
+        int - the HTTP status code of the webpage.
+        """
 
+        document = self.document_collection.get_document_by_filename(filename=pdf_filename)
+        if not document:
+            try:
+                self.document_collection.add_document(local_file_path=os.path.join(self.storage_dir, pdf_filename))
+                document = self.document_collection.get_document_by_filename(filename=pdf_filename)
+            except FileNotFoundError:
+                logging.error(f"PDF file not found: {pdf_filename}")
+                return False, None, None
 
+        url = document.get_url_at_position(normalized_x, normalized_y, normalized_coordinates=True, page_index=page_number)
+        if url:
+            logging.info(f"Found a URL at position ({normalized_x}, {normalized_y}) on page {page_number} for PDF {pdf_filename}: {url}")
+            safe_filename, status_code = self.convert_webpage(driver=driver, url=url)
+            return True, safe_filename, status_code
+        else:
+            return False, None, None
 
 class ImageConverter(Converter):
     def __init__(self, storage_dir: str, webpage_load_seconds: int, duplicate_image_prune_seconds: int):
@@ -314,12 +378,47 @@ class FlaskWebApp:
         self.app.add_url_rule('/convert-to-pdf', 'convert_to_pdf', self.convert_to_pdf, methods=['GET'])
         self.app.add_url_rule('/images/<path:filename>', 'serve_image', self.serve_image, methods=['GET'])
         self.app.add_url_rule('/pdfs/<path:filename>', 'serve_pdf', self.serve_pdf, methods=['GET'])
-        self.app.add_url_rule('/click', 'click', self.click, methods=['GET'])
+        self.app.add_url_rule('/click-image', 'click_image', self.click_image, methods=['GET'])
+        self.app.add_url_rule('/click-pdf', 'click_pdf', self.click_pdf, methods=['GET'])
 
     def run(self):
         self.app.run(host=HOST, port=PORT)
 
-    def click(self):
+    def click_pdf(self):
+        # Clicks at the provided x, y coordinates on the currently loaded PDF, if any
+        x = request.args.get('x')
+        y = request.args.get('y')
+        pdf_filename = request.args.get('pdf_filename')
+        page_number = request.args.get('page_number')
+        if not x or not y or not pdf_filename or not page_number:
+            return Response("Missing x, y, pdf_filename, or page_number", status=400)
+
+        x = float(x)
+        y = float(y)
+
+        if x > 1 or y > 1 or x < 0 or y < 0:
+            return Response("x and y coordinates must be normalized between 0 and 1.", status=400)
+
+        page_number = int(page_number)
+
+        driver = self.pdf_web_driver_manager.driver
+
+        url_accessed, safe_filename, status_code = self.pdf_converter.click(driver, x, y, page_number, pdf_filename)
+
+        if not url_accessed:
+            return Response("", status=400)
+
+        if safe_filename:
+            # A new PDF was created after the click
+            base_url = f"http://{DOMAIN}:{PORT}" if DOMAIN else request.host_url.rstrip('/')
+            pdf_url = f"{base_url}/pdfs/{safe_filename}"
+            response_contents = f"{pdf_url}*{status_code}*"
+            return Response(response_contents, mimetype='text/plain')
+        else:
+            return Response("Failed to convert webpage to PDF.", status=500, mimetype='text/plain')
+
+
+    def click_image(self):
         # Clicks at the provided x, y coordinates on the currently loaded webpage, if any
         x = request.args.get('x')
         y = request.args.get('y')
