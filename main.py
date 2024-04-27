@@ -43,10 +43,19 @@ class WebDriverManager:
         self.setup_undetected_chrome_driver(webpage_timeout_seconds)
 
     def setup_undetected_chrome_driver(self, webpage_timeout_seconds: int):
+        chromedriver_autoinstaller.install()
+
+        set_device_metrics_override = dict({
+            "width": 360,
+            "height": 800,
+            "deviceScaleFactor": 50,
+            "mobile": True
+        })
+
         options = uc.ChromeOptions()
         options.add_argument('--headless')
-        chromedriver_autoinstaller.install()
         self.driver = uc.Chrome(options=options)
+        self.driver.execute_cdp_cmd('Emulation.setDeviceMetricsOverride', set_device_metrics_override)
         self.driver.set_page_load_timeout(webpage_timeout_seconds)
 
     def click_at_pixel(self, x, y) -> bool:
@@ -200,6 +209,18 @@ class PDFConverter(Converter):
             await_webpage_load_result = PDFConverter.await_webpage_load(driver, self.webpage_load_seconds)
             if not await_webpage_load_result:
                 logging.warning(f"Webpage '{url}' did not reach readyState within {self.webpage_load_seconds} seconds.")
+
+            # Check if the URL changed
+            if driver.current_url != url:
+                logging.info(f"URL changed to {driver.current_url}. Reassigning URL.")
+                # Sleep for 1 second because there may be multiple redirects
+                time.sleep(1)
+                url = driver.current_url
+                logging.info(f"New URL: {url}")
+                # We now must await webpage load again
+                await_webpage_load_result = PDFConverter.await_webpage_load(driver, self.webpage_load_seconds)
+                if not await_webpage_load_result:
+                    logging.warning(f"Webpage '{url}' accessed after redirect did not reach readyState within {self.webpage_load_seconds} seconds.")
 
             result = driver.execute_cdp_cmd("Page.printToPDF", {
                 "landscape": False,

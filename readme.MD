@@ -1,6 +1,12 @@
-# How to run the server:
+REST API and file server for converting webpages to PDFs or images, for consumption in Resonite.
 
-1. cd to the root of this repo
+This must be hosted on a machine exposed on the internet so other Resonite users can access the file server.
+
+This documentation is written for Linux, but Windows should work as well.
+
+# Running the server:
+
+1. `cd` to the root of this repo
 2. Create a venv: `python3 -m venv venv`
 3. Activate venv: `source venv/bin/activate`
 4. Install requirements: `pip3 install -r requirements.txt`
@@ -11,7 +17,6 @@
 
 
 # Example Usage
-
 
 Sample configuration:
 
