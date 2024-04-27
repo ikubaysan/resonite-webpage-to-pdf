@@ -1,0 +1,8 @@
+[Unit]
+Description=resonite_webpage_to_pdf
+
+[Service]
+ExecStart=/bin/bash /home/ubuntu/repos/resonite-website-to-pdf/run.sh # Modify as needed
+WorkingDirectory=/home/ubuntu/repos/resonite-website-to-pdf/ # Modify as needed
+User=ubuntu # Modify as needed
+Environment=PYTHONUNBUFFERED=1

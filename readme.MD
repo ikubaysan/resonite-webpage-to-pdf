@@ -27,6 +27,17 @@ Request:
 Response:
 `http://10.0.0.106:2099/pdfs/aHR0cDovL2JpbmcuY29t.pdf`
 
+# Optional: Running as a service
+1. Open `resonite_webpage_to_pdf.service` in a text editor and modify these fields as needed:
+    * ExecStart
+    * WorkingDirectory
+    * User
+2. Copy `resonite_webpage_to_pdf.service` to `/etc/systemd/system/`
+3. Run `sudo systemctl daemon-reload` to reload the service files
+4. Run `sudo systemctl start resonite_webpage_to_pdf` to start the service
+5. Run `sudo systemctl enable resonite_webpage_to_pdf` to enable the service on boot
+
+
 # Notes
 If you need to update chromium, and you installed it with snap:
 `sudo snap refresh chromium`
