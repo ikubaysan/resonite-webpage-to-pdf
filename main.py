@@ -238,15 +238,15 @@ class PDFConverter(Converter):
                 "preferCSSPageSize": True
             })
 
-            encoded_url = base64.urlsafe_b64encode(url.encode('utf-8')).decode('utf-8')
+            hashed_url = hashlib.md5(url.encode('utf-8')).hexdigest()
 
             for file in os.listdir(self.storage_dir):
-                if file.startswith(f"{encoded_url}_") and file.endswith(".pdf"):
+                if file.startswith(f"{hashed_url}_") and file.endswith(".pdf"):
                     if time.time() - os.path.getmtime(os.path.join(self.storage_dir, file)) > DUPLICATE_PDF_PRUNE_SECONDS:
                         logging.info(f"Pruning old PDF file: {file}")
                         os.remove(os.path.join(self.storage_dir, file))
 
-            safe_filename = f"{encoded_url}_{int(time.time())}.pdf"
+            safe_filename = f"{hashed_url}_{int(time.time())}.pdf"
             output_file_path = os.path.join(self.storage_dir, safe_filename)
 
             with open(output_file_path, "wb") as f:
@@ -470,6 +470,12 @@ class FlaskWebApp:
     def sanitize_url(self, url: str):
         url = url.strip()
 
+        # Replace | with & in the URL.
+        # The client should replace & with | when sending the URL.
+        # This is because a requested URL may contain '&',
+        # and this can cause it to be unintentionally picked up as a query parameter.
+        url = url.replace('|', '&')
+
         if is_valid_url(url):
             logging.info(f"Confirmed URL is valid: {url}")
         else:
@@ -487,9 +493,10 @@ class FlaskWebApp:
         if not url:
             return Response("Missing URL", status=400)
 
-        url = self.sanitize_url(url)
-
         logging.info(f"Received request to convert URL to PDF: {url}")
+        url = self.sanitize_url(url)
+        logging.info(f"Sanitized URL: {url}")
+
 
         driver = self.pdf_web_driver_manager.driver
 
