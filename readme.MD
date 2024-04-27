@@ -35,7 +35,7 @@ Response:
 2. Copy `resonite_webpage_to_pdf.service` to `/etc/systemd/system/` with command: `sudo cp resonite_webpage_to_pdf.service /etc/systemd/system/`
 3. Run `sudo systemctl daemon-reload` to reload the service files
 4. Run `sudo systemctl start resonite_webpage_to_pdf` to start the service
-5. Run `sudo systemctl enable resonite_webpage_to_pdf` to enable the service on boot
+5. (Optional) Run `sudo systemctl enable resonite_webpage_to_pdf` to enable the service on boot
 
 To disable the service on boot:
 `sudo systemctl disable resonite_webpage_to_pdf`
