@@ -37,6 +37,18 @@ Response:
 4. Run `sudo systemctl start resonite_webpage_to_pdf` to start the service
 5. Run `sudo systemctl enable resonite_webpage_to_pdf` to enable the service on boot
 
+To disable the service on boot:
+`sudo systemctl disable resonite_webpage_to_pdf`
+
+To stop the service:
+`sudo systemctl stop resonite_webpage_to_pdf`
+
+To check the status of the service:
+`sudo systemctl status resonite_webpage_to_pdf`
+
+To delete the service:
+`sudo rm /etc/systemd/system/resonite_webpage_to_pdf.service`
+`sudo systemctl daemon-reload`
 
 # Notes
 If you need to update chromium, and you installed it with snap:
