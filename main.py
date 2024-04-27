@@ -35,6 +35,7 @@ DUPLICATE_IMAGE_PRUNE_SECONDS = config.getint('DEFAULT', 'DUPLICATE_IMAGE_PRUNE_
 DUPLICATE_PDF_PRUNE_SECONDS = config.getint('DEFAULT', 'DUPLICATE_PDF_PRUNE_SECONDS')
 IMAGE_DEFAULT_WINDOW_WIDTH = config.getint('DEFAULT', 'IMAGE_DEFAULT_WINDOW_WIDTH')
 IMAGE_DEFAULT_WINDOW_HEIGHT = config.getint('DEFAULT', 'IMAGE_DEFAULT_WINDOW_HEIGHT')
+HEADLESS_WEBDRIVER = config.getboolean('DEFAULT', 'HEADLESS_WEBDRIVER')
 
 
 class WebDriverManager:
@@ -53,7 +54,12 @@ class WebDriverManager:
         })
 
         options = uc.ChromeOptions()
-        options.add_argument('--headless')
+        if HEADLESS_WEBDRIVER:
+            logging.info("Running WebDriver in headless mode. Note: some websites may detect this and block access.")
+            options.add_argument('--headless')
+        else:
+            logging.info("Running WebDriver in non-headless mode.")
+
         self.driver = uc.Chrome(options=options)
         self.driver.execute_cdp_cmd('Emulation.setDeviceMetricsOverride', set_device_metrics_override)
         self.driver.set_page_load_timeout(webpage_timeout_seconds)
