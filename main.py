@@ -234,16 +234,13 @@ class PDFConverter(Converter):
             logging.error(f"Error converting URL to PDF: {e}")
             return None, None
 
-    def click(self, driver, normalized_x: float, normalized_y: float, page_number: int, pdf_filename: str) -> (bool, str, int):
+    def click(self, normalized_x: float, normalized_y: float, page_index: int, pdf_filename: str) -> Union[str, None]:
         """
-        :param driver:
         :param normalized_x:
         :param normalized_y:
-        :param page_number:
+        :param page_index:
         :param pdf_filename:
-        :return: bool - True if a URL was found and clicked, False otherwise.
-        str - the filename of the PDF created, or None if no URL was found.
-        int - the HTTP status code of the webpage.
+        :return: URL which can be accessed by clicking at the given coordinates, or None if no URL is found
         """
 
         document = self.document_collection.get_document_by_filename(filename=pdf_filename)
@@ -253,15 +250,15 @@ class PDFConverter(Converter):
                 document = self.document_collection.get_document_by_filename(filename=pdf_filename)
             except FileNotFoundError:
                 logging.error(f"PDF file not found: {pdf_filename}")
-                return False, None, None
+                return None
 
-        url = document.get_url_at_position(normalized_x, normalized_y, normalized_coordinates=True, page_index=page_number)
+        url = document.get_url_at_position(normalized_x, normalized_y, normalized_coordinates=True, page_index=page_index)
         if url:
-            logging.info(f"Found a URL at position ({normalized_x}, {normalized_y}) on page {page_number} for PDF {pdf_filename}: {url}")
-            safe_filename, status_code = self.convert_webpage(driver=driver, url=url)
-            return True, safe_filename, status_code
+            logging.info(f"Found a URL at position ({normalized_x}, {normalized_y}) on page {page_index} for PDF {pdf_filename}: {url}")
+            return url
         else:
-            return False, None, None
+            logging.info(f"No URL found at position ({normalized_x}, {normalized_y}) on page {page_index} for PDF {pdf_filename}")
+            return None
 
 class ImageConverter(Converter):
     def __init__(self, storage_dir: str, webpage_load_seconds: int, duplicate_image_prune_seconds: int):
@@ -389,33 +386,33 @@ class FlaskWebApp:
         x = request.args.get('x')
         y = request.args.get('y')
         pdf_filename = request.args.get('pdf_filename')
-        page_number = request.args.get('page_number')
-        if not x or not y or not pdf_filename or not page_number:
-            return Response("Missing x, y, pdf_filename, or page_number", status=400)
+
+        if "/" in pdf_filename:
+            # Remove everything before and including the last slash
+            original_pdf_filename = pdf_filename
+            pdf_filename = pdf_filename.split("/")[-1]
+            logging.info(f"Extracted PDF filename from {original_pdf_filename}: {pdf_filename}")
+
+        page_index = request.args.get('page_index')
+        if not x or not y or not pdf_filename or not page_index:
+            return Response("Missing x, y, pdf_filename, or page_index", status=400)
 
         x = float(x)
         y = float(y)
 
         if x > 1 or y > 1 or x < 0 or y < 0:
-            return Response("x and y coordinates must be normalized between 0 and 1.", status=400)
+            return Response("x and y coordinates must be normalized between 0 and 1, where origin is at the top left.", status=400)
 
-        page_number = int(page_number)
+        page_index = int(page_index)
 
-        driver = self.pdf_web_driver_manager.driver
+        #url_accessed, safe_filename, status_code = self.pdf_converter.click(driver, x, y, page_index, pdf_filename)
 
-        url_accessed, safe_filename, status_code = self.pdf_converter.click(driver, x, y, page_number, pdf_filename)
+        url_at_position = self.pdf_converter.click(x, y, page_index, pdf_filename)
 
-        if not url_accessed:
-            return Response("", status=400)
-
-        if safe_filename:
-            # A new PDF was created after the click
-            base_url = f"http://{DOMAIN}:{PORT}" if DOMAIN else request.host_url.rstrip('/')
-            pdf_url = f"{base_url}/pdfs/{safe_filename}"
-            response_contents = f"{pdf_url}*{status_code}*"
-            return Response(response_contents, mimetype='text/plain')
+        if url_at_position:
+            return Response(url_at_position, mimetype='text/plain', status=200)
         else:
-            return Response("Failed to convert webpage to PDF.", status=500, mimetype='text/plain')
+            return Response("", mimetype='text/plain', status=500)
 
 
     def click_image(self):
