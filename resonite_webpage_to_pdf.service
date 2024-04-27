@@ -2,7 +2,7 @@
 Description=resonite_webpage_to_pdf
 
 [Service]
-ExecStart=/bin/bash /home/ubuntu/repos/resonite-website-to-pdf/run.sh # Modify as needed
-WorkingDirectory=/home/ubuntu/repos/resonite-website-to-pdf/ # Modify as needed
+ExecStart=/bin/bash /home/ubuntu/repos/resonite-website-to-pdf/run.sh # Modify as needed. Use an absolute path, not a relative path.
+WorkingDirectory=/home/ubuntu/repos/resonite-website-to-pdf/ # Modify as needed. Use an absolute path, not a relative path.
 User=ubuntu # Modify as needed
 Environment=PYTHONUNBUFFERED=1
