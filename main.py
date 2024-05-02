@@ -8,13 +8,12 @@ import undetected_chromedriver as uc
 import chromedriver_autoinstaller
 import configparser
 from selenium.webdriver.common.by import By
-from urllib.parse import urlparse
 import validators
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
-import fitz  # PyMuPDF
-from LinkIdentification.Document import Document
 from LinkIdentification.DocumentCollection import DocumentCollection
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 
 # Setup logging
@@ -54,6 +53,11 @@ class WebDriverManager:
         })
 
         options = uc.ChromeOptions()
+
+        options.add_experimental_option("prefs", {
+            "profile.default_content_setting_values.geolocation": 2,  # 1: allow, 2: block
+        })
+
         if HEADLESS_WEBDRIVER:
             logging.info("Running WebDriver in headless mode. Note: some websites may detect this and block access.")
             options.add_argument('--headless')
@@ -138,7 +142,7 @@ class Converter(ABC):
         start_time = time.time()
         while time.time() - start_time < webpage_load_seconds:
             ready_state = driver.execute_script("return document.readyState")
-            if ready_state in ['complete', 'interactive']:
+            if ready_state == "complete":
                 logging.info(f"Confirmed webpage is ready in {round(time.time() - start_time, 4)} seconds based on readyState.")
                 return True
             time.sleep(0.1)
@@ -384,6 +388,11 @@ class FlaskWebApp:
             exit()
 
         self.app = Flask(__name__)
+        self.limiter = Limiter(
+            key_func=get_remote_address,
+            app=self.app,
+            default_limits=["7200 per hour", "120 per minute"]
+        )
 
         self.image_converter = ImageConverter(storage_dir=IMAGE_STORAGE_DIR,
                                                 webpage_load_seconds=WEBPAGE_LOAD_SECONDS,

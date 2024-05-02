@@ -6,3 +6,4 @@ flask
 PyMuPDF
 chromedriver-autoinstaller
 validators
+Flask-Limiter
