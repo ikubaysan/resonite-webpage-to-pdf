@@ -483,7 +483,11 @@ class FlaskWebApp:
         # The client should replace & with | when sending the URL.
         # This is because a requested URL may contain '&',
         # and this can cause it to be unintentionally picked up as a query parameter.
-        url = url.replace('|', '&')
+
+        logging.info(f"URL before sanitization character replacement: {url}")
+        # Replace | with & and ^ with ?
+        url = url.replace('|', '&').replace('^', '?')
+        logging.info(f"URL after sanitization character replacement: {url}")
 
         if is_valid_url(url):
             logging.info(f"Confirmed URL is valid: {url}")
