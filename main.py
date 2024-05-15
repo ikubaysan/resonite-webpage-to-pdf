@@ -14,6 +14,8 @@ from typing import List, Tuple, Union
 from LinkIdentification.DocumentCollection import DocumentCollection
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from urllib.parse import urlparse
+from webdriver_manager.core.os_manager import OperationSystemManager, ChromeType
 
 
 # Setup logging
@@ -64,7 +66,10 @@ class WebDriverManager:
         else:
             logging.info("Running WebDriver in non-headless mode.")
 
-        self.driver = uc.Chrome(options=options)
+        br_ver = OperationSystemManager().get_browser_version_from_os(ChromeType.CHROMIUM)
+        version_main = int(br_ver.split('.')[0])
+
+        self.driver = uc.Chrome(options=options, version_main=version_main)
         self.driver.execute_cdp_cmd('Emulation.setDeviceMetricsOverride', set_device_metrics_override)
         self.driver.set_page_load_timeout(webpage_timeout_seconds)
 
@@ -361,9 +366,9 @@ class ImageConverter(Converter):
             return None, None
 
 
-def is_valid_url(url):
+def is_valid_url(url: str) -> bool:
     """
-    Validates whether a given string is a valid URL. Adds 'http://' if no protocol is specified.
+    Validates whether a given string is a valid URL, ensuring it includes a scheme and a properly formed host.
 
     Args:
     url (str): The URL string to validate.
@@ -371,12 +376,17 @@ def is_valid_url(url):
     Returns:
     bool: True if the string is a valid URL, False otherwise.
     """
-    # Check if the URL has a protocol, if not prepend 'http://'
+    # Add scheme if missing to properly parse the URL
     if not url.startswith(('http://', 'https://')):
         url = 'http://' + url
 
-    result = validators.url(url)
-    return True if result else False
+    parsed_url = urlparse(url)
+    return all([
+        parsed_url.scheme in ['http', 'https'],  # Ensures the scheme is HTTP or HTTPS
+        '.' in parsed_url.netloc or parsed_url.netloc.lower() == 'localhost',  # Checks for a dot in the domain part or allows localhost
+        parsed_url.netloc,  # Ensures the network location is not empty
+        " " not in url,  # Ensures the URL does not contain spaces
+    ])
 
 class FlaskWebApp:
     def __init__(self, config_path: str = 'config.ini'):
