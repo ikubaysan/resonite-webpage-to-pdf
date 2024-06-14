@@ -56,6 +56,13 @@ class WebDriverManager:
 
         options = uc.ChromeOptions()
 
+        # current_dir = os.getcwd()
+        # # File name
+        # file_name = "Surfshark-VPN-Extension.crx"
+        # # Absolute path of the file
+        # absolute_path = os.path.join(current_dir, file_name)
+        # options.add_extension(absolute_path)
+
         options.add_experimental_option("prefs", {
             "profile.default_content_setting_values.geolocation": 2,  # 1: allow, 2: block
         })
@@ -72,6 +79,8 @@ class WebDriverManager:
         self.driver = uc.Chrome(options=options, version_main=version_main)
         self.driver.execute_cdp_cmd('Emulation.setDeviceMetricsOverride', set_device_metrics_override)
         self.driver.set_page_load_timeout(webpage_timeout_seconds)
+        self.driver.minimize_window()
+
 
     def click_at_pixel(self, x, y) -> bool:
         # Scroll the window to the y-coordinate minus half the window height to ensure the element is in the view
@@ -385,7 +394,7 @@ def is_valid_url(url: str) -> bool:
         parsed_url.scheme in ['http', 'https'],  # Ensures the scheme is HTTP or HTTPS
         '.' in parsed_url.netloc or parsed_url.netloc.lower() == 'localhost',  # Checks for a dot in the domain part or allows localhost
         parsed_url.netloc,  # Ensures the network location is not empty
-        " " not in url,  # Ensures the URL does not contain spaces
+        # " " not in url,  # Ensures the URL does not contain spaces
     ])
 
 class FlaskWebApp:
