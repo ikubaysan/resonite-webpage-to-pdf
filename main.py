@@ -421,7 +421,8 @@ class FlaskWebApp:
                                             duplicate_pdf_prune_seconds=DUPLICATE_PDF_PRUNE_SECONDS)
 
         self.setup_routes()
-        self.image_web_driver_manager = WebDriverManager(webpage_timeout_seconds=WEBPAGE_TIMEOUT_SECONDS)
+        #self.image_web_driver_manager = WebDriverManager(webpage_timeout_seconds=WEBPAGE_TIMEOUT_SECONDS)
+        self.image_web_driver_manager = None
         self.pdf_web_driver_manager = WebDriverManager(webpage_timeout_seconds=WEBPAGE_TIMEOUT_SECONDS)
         return
 
@@ -471,6 +472,9 @@ class FlaskWebApp:
 
 
     def click_image(self):
+        # Don't use the function yet, not implemented
+        return Response("Not implemented", status=501)
+
         # Clicks at the provided x, y coordinates on the currently loaded webpage, if any
         x = request.args.get('x')
         y = request.args.get('y')
@@ -544,6 +548,10 @@ class FlaskWebApp:
 
 
     def convert_to_image(self):
+
+        # Don't use the function yet, not implemented
+        return Response("Not implemented", status=501)
+
         url = request.args.get('url')
         if not url:
             return Response("Missing URL", status=400)
