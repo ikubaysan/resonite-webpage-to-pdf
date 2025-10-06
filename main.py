@@ -1,3 +1,5 @@
+import urllib
+
 from flask import Flask, request, send_from_directory, Response
 import time
 import base64
@@ -11,6 +13,9 @@ from selenium.webdriver.common.by import By
 import validators
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
+
+from werkzeug.sansio.multipart import SEARCH_EXTRA_LENGTH
+
 from LinkIdentification.DocumentCollection import DocumentCollection
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -37,6 +42,7 @@ DUPLICATE_PDF_PRUNE_SECONDS = config.getint('DEFAULT', 'DUPLICATE_PDF_PRUNE_SECO
 IMAGE_DEFAULT_WINDOW_WIDTH = config.getint('DEFAULT', 'IMAGE_DEFAULT_WINDOW_WIDTH')
 IMAGE_DEFAULT_WINDOW_HEIGHT = config.getint('DEFAULT', 'IMAGE_DEFAULT_WINDOW_HEIGHT')
 HEADLESS_WEBDRIVER = config.getboolean('DEFAULT', 'HEADLESS_WEBDRIVER')
+SEARCH_ENGINE = config.get('DEFAULT', 'SEARCH_ENGINE', fallback='google').lower()
 
 
 class WebDriverManager:
@@ -162,7 +168,6 @@ class Converter(ABC):
             time.sleep(0.1)
         return False
 
-
     @staticmethod
     def get_http_status_code(driver) -> int:
         current_url = driver.current_url
@@ -170,11 +175,17 @@ class Converter(ABC):
         return status_code
 
     @staticmethod
-    def query_to_google_search_url(query: str) -> str:
-        base_url = "https://www.google.com/search?q="
-        encoded_query = "+".join(query.split())
-        return base_url + encoded_query
+    def query_to_search_url(query: str, search_engine: str) -> str:
+        encoded_query = urllib.parse.quote_plus(query.strip())
 
+        if search_engine == "google":
+            return f"https://www.google.com/search?q={encoded_query}"
+        elif search_engine == "bing":
+            return f"https://www.bing.com/search?q={encoded_query}"
+        elif search_engine == "duckduckgo":
+            return f"https://duckduckgo.com/?q={encoded_query}"
+        else:
+            raise ValueError(f"Unsupported search engine: {search_engine}")
 
 class Link:
     def __init__(self, uri: str, bounds: Tuple[float, float, float, float], page_width: float, page_height: float):
@@ -516,7 +527,7 @@ class FlaskWebApp:
             logging.info(f"Confirmed URL is valid: {url}")
         else:
             logging.info(f"Invalid URL: {url}. Attempting to convert to Google search URL.")
-            url = Converter.query_to_google_search_url(url)
+            url = Converter.query_to_search_url(url, search_engine=SEARCH_ENGINE)
 
         if not (url.startswith('http://') or url.startswith('https://')):
             url = 'http://' + url
